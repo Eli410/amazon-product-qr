@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Amazon Product QR</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <script src="qrcode.js"></script>
+  <!-- Load jsPDF from local file -->
+  <script src="lib/jspdf.umd.min.js"></script>
+  <!-- Load Noto Sans font for Unicode support -->
+  <script src="lib/fonts/noto-sans-font.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Amazon Product QR</h1>
+    <div id="content">
+      <!-- Content will be dynamically inserted here -->
+    </div>
+    <div id="qrcode" class="qr-container"></div>
+    <button id="printButton" class="print-button">Print Product Info</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
