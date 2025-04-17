@@ -125,16 +125,28 @@ h1 {
 #qrcode {
   display: flex;
   justify-content: center;
-  margin: 15px 0;
+  align-items: center;
+  margin: 10px auto;
+  transform: scale(0.375);
+  transform-origin: center center;
+  width: 150px;
+  height: 150px;
 }
 
 .qr-container {
   display: flex;
   justify-content: center;
-  margin: 15px 0;
+  align-items: center;
+  margin: 10px auto;
+  transform: scale(0.375);
+  transform-origin: center center;
+  width: 150px;
+  height: 150px;
 }
 
 #qrcode canvas, .qr-container canvas {
   max-width: 100%;
   height: auto;
+  margin: 0;
+  padding: 0;
 } 

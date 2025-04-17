@@ -43,11 +43,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create new QR code with the product URL
             new QRCode(qrcodeElement, {
               text: response.url,
-              width: 200,
-              height: 200,
+              width: 400,  // Back to 400 for high resolution
+              height: 400, // Back to 400 for high resolution
               colorDark: "#000000",
               colorLight: "#ffffff",
-              correctLevel: QRCode.CorrectLevel.H
+              correctLevel: QRCode.CorrectLevel.H,
+              margin: 2,
+              scale: 4  // Keep high scale for better resolution
             });
 
             // Add input event listener to price field to control button state
