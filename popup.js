@@ -131,9 +131,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Create a new jsPDF instance with selected size
       const doc = new window.jspdf.jsPDF({
-        orientation: 'portrait',
+        orientation: selectedSize === '4x3' ? 'landscape' : 'portrait',
         unit: 'mm',
-        format: [width, height],
+        format: selectedSize === '4x3' ? [height, width] : [width, height],
         putOnlyUsedFonts: true,
         floatPrecision: 16
       });
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // — Header —
         doc.setFontSize(14);
         doc.text("Amazon Product", pageWidth/2, cursorY, { align: "center" });
-        cursorY += doc.getLineHeightFactor() * doc.getFontSize();
+        cursorY += (doc.getLineHeightFactor() * doc.getFontSize()) * 0.7; // Reduced spacing by 30%
       
         // — Product title —
         doc.setFontSize(10);
