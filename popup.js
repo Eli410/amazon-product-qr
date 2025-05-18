@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // Load saved PDF size
+  chrome.storage.local.get(['pdfSize'], function(result) {
+    const sizeSelect = document.getElementById('pdf-size');
+    sizeSelect.value = result.pdfSize || '4x6';
+  });
+
+  // Save PDF size when changed
+  document.getElementById('pdf-size').addEventListener('change', function(e) {
+    const newSize = e.target.value;
+    chrome.storage.local.set({ pdfSize: newSize });
+  });
+
   // Get the active tab
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     const activeTab = tabs[0];
@@ -101,11 +113,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      // Create a new jsPDF instance with custom size (100x150mm)
+      // Get selected size and convert to mm
+      const selectedSize = document.getElementById('pdf-size').value;
+      let width, height;
+      
+      switch(selectedSize) {
+        case '4x3':
+          width = 101.6;  // 4 inches in mm
+          height = 76.2;  // 3 inches in mm
+          break;
+        case '4x6':
+        default:
+          width = 101.6;  // 4 inches in mm
+          height = 152.4; // 6 inches in mm
+          break;
+      }
+      
+      // Create a new jsPDF instance with selected size
       const doc = new window.jspdf.jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [100, 150],
+        format: [width, height],
         putOnlyUsedFonts: true,
         floatPrecision: 16
       });
@@ -115,56 +143,97 @@ document.addEventListener('DOMContentLoaded', function() {
       // Use default font
       const fontName = 'helvetica';
       doc.setFont(fontName, "normal");
-      
-      // Add title
-      doc.setFontSize(16);
-      doc.text("Amazon Product", 50, 15, { 
-        align: "center",
-        maxWidth: 90
-      });
-      
-      // Add product title
-      doc.setFontSize(12);
-      const title = window.productInfo.title;
-      
-      // Split title into multiple lines if it's too long
-      const titleLines = doc.splitTextToSize(title, 90);
-      doc.text(titleLines, 50, 25, { 
-        align: "center",
-        maxWidth: 90
-      });
-      const titleHeight = titleLines.length * 5; // Approximate height per line in mm
-      
-      // Calculate the position for price based on title length
-      const priceY = Math.max(45, 25 + titleHeight + 10); // Ensure minimum spacing of 10mm
-      
-      // Add price
-      doc.setFontSize(14);
-      doc.text(window.productInfo.price, 50, priceY, { 
-        align: "center",
-        maxWidth: 90
-      });
-      
-      // Add QR code
-      // Get the QR code canvas
-      const qrCanvas = document.querySelector('#qrcode canvas');
-      if (qrCanvas) {
-        console.log("QR canvas found");
-        // Convert canvas to image
-        const qrImage = qrCanvas.toDataURL('image/png');
+
+      if (selectedSize === '4x6') {
+        // Layout for 4x6
+        // Add title
+        doc.setFontSize(16);
+        const titleText = "Amazon Product";
+        const titleWidth = doc.getTextWidth(titleText);
+        doc.text(titleText, width/2, 15, { 
+          align: "center"
+        });
         
-        // Add QR code to PDF (scaled to fit the smaller page)
-        doc.addImage(qrImage, 'PNG', 25, priceY + 15, 50, 50);
+        // Add product title
+        doc.setFontSize(12);
+        const title = window.productInfo.title;
+        const titleLines = doc.splitTextToSize(title, width * 0.9);
+        doc.text(titleLines, width/2, 25, { 
+          align: "center"
+        });
+        const titleHeight = titleLines.length * 5;
+        
+        // Calculate the position for price based on title length
+        const priceY = Math.max(45, 25 + titleHeight + 10);
+        
+        // Add price
+        doc.setFontSize(14);
+        const priceText = window.productInfo.price;
+        doc.text(priceText, width/2, priceY, { 
+          align: "center"
+        });
+        
+        // Add QR code
+        const qrCanvas = document.querySelector('#qrcode canvas');
+        const qrSize = 50; // Fixed size for 4x6
+        
+        if (qrCanvas) {
+          console.log("QR canvas found");
+          const qrImage = qrCanvas.toDataURL('image/png');
+          doc.addImage(qrImage, 'PNG', (width - qrSize)/2, priceY + 15, qrSize, qrSize);
+        } else {
+          console.error("QR canvas not found!");
+        }
+        
+        // Add URL
+        doc.setFontSize(8);
+        const urlText = window.productInfo.url;
+        doc.text(urlText, width/2, priceY + qrSize + 20, { 
+          align: "center"
+        });
       } else {
-        console.error("QR canvas not found!");
+        // 4×3 layout
+        const pageWidth  = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let cursorY = 10; // top margin
+      
+        // — Header —
+        doc.setFontSize(14);
+        doc.text("Amazon Product", pageWidth/2, cursorY, { align: "center" });
+        cursorY += doc.getLineHeightFactor() * doc.getFontSize();
+      
+        // — Product title —
+        doc.setFontSize(10);
+        const titleLines = doc.splitTextToSize(window.productInfo.title, pageWidth * 0.9);
+        doc.text(titleLines, pageWidth/2, cursorY, { align: "center" });
+        cursorY += titleLines.length * doc.getLineHeightFactor() * doc.getFontSize();
+      
+        // — Price —
+        doc.setFontSize(12);
+        cursorY += 5; // padding
+        doc.text(window.productInfo.price, pageWidth/2, cursorY, { align: "center" });
+        cursorY += doc.getLineHeightFactor() * doc.getFontSize();
+      
+        // — QR code —
+        const qrCanvas = document.querySelector('#qrcode canvas');
+        if (!qrCanvas) {
+          console.error("QR canvas not found!");
+        } else {
+          const qrSize = 35;
+          const qrImage = qrCanvas.toDataURL('image/png');
+          // clamp Y so QR never goes below the page
+          const qrY = Math.min(cursorY + 5, pageHeight - qrSize - 10);
+          doc.addImage(qrImage, 'PNG', (pageWidth - qrSize)/2, qrY, qrSize, qrSize);
+          cursorY = qrY + qrSize;
+        }
+      
+        // — URL —
+        doc.setFontSize(6);
+        cursorY += 5;
+        doc.text(window.productInfo.url, pageWidth/2, cursorY, { align: "center" });
       }
       
-      // Add URL
-      doc.setFontSize(8);
-      doc.text(window.productInfo.url, 50, priceY + 75, { 
-        align: "center",
-        maxWidth: 90
-      });
+      
       
       console.log("PDF generated, opening in new tab...");
       
