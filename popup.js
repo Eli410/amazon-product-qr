@@ -117,23 +117,15 @@ document.addEventListener('DOMContentLoaded', function() {
       const selectedSize = document.getElementById('pdf-size').value;
       let width, height;
       
-      switch(selectedSize) {
-        case '4x3':
-          width = 101.6;  // 4 inches in mm
-          height = 76.2;  // 3 inches in mm
-          break;
-        case '4x6':
-        default:
-          width = 101.6;  // 4 inches in mm
-          height = 152.4; // 6 inches in mm
-          break;
-      }
+      // Always use 4x6 size (in mm)
+      width = 101.6;  // 4 inches in mm
+      height = 152.4; // 6 inches in mm
       
       // Create a new jsPDF instance with selected size
       const doc = new window.jspdf.jsPDF({
-        orientation: selectedSize === '4x3' ? 'landscape' : 'portrait',
+        orientation: 'portrait',
         unit: 'mm',
-        format: selectedSize === '4x3' ? [height, width] : [width, height],
+        format: [width, height],
         putOnlyUsedFonts: true,
         floatPrecision: 16
       });
@@ -192,8 +184,8 @@ document.addEventListener('DOMContentLoaded', function() {
           align: "center"
         });
       } else {
-        // 4×3 layout
-        const pageWidth  = doc.internal.pageSize.getWidth();
+        // 4×3 layout (but on 4x6 canvas)
+        const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         let cursorY = 10; // top margin
       
@@ -221,8 +213,8 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
           const qrSize = 35;
           const qrImage = qrCanvas.toDataURL('image/png');
-          // clamp Y so QR never goes below the page
-          const qrY = Math.min(cursorY + 5, pageHeight - qrSize - 10);
+          // Position QR code in the middle of the first half of the page
+          const qrY = Math.min(cursorY + 5, (pageHeight/2) - qrSize - 10);
           doc.addImage(qrImage, 'PNG', (pageWidth - qrSize)/2, qrY, qrSize, qrSize);
           cursorY = qrY + qrSize;
         }
@@ -231,6 +223,8 @@ document.addEventListener('DOMContentLoaded', function() {
         doc.setFontSize(6);
         cursorY += 5;
         doc.text(window.productInfo.url, pageWidth/2, cursorY, { align: "center" });
+        
+        // The rest of the page will remain white (extra 3 inches of space)
       }
       
       
