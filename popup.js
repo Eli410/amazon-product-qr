@@ -188,23 +188,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         let cursorY = 10; // top margin
-      
-        // — Header —
-        doc.setFontSize(14);
-        doc.text("Amazon Product", pageWidth/2, cursorY, { align: "center" });
-        cursorY += (doc.getLineHeightFactor() * doc.getFontSize()) * 0.7; // Reduced spacing by 30%
-      
+        
         // — Product title —
         doc.setFontSize(10);
         const titleLines = doc.splitTextToSize(window.productInfo.title, pageWidth * 0.9);
         doc.text(titleLines, pageWidth/2, cursorY, { align: "center" });
-        cursorY += titleLines.length * doc.getLineHeightFactor() * doc.getFontSize();
+        cursorY += titleLines.length * doc.getLineHeightFactor() * doc.getFontSize() * 0.4; // further reduced spacing
       
         // — Price —
-        doc.setFontSize(12);
-        cursorY += 5; // padding
+        doc.setFontSize(10);
         doc.text(window.productInfo.price, pageWidth/2, cursorY, { align: "center" });
-        cursorY += doc.getLineHeightFactor() * doc.getFontSize();
+        cursorY += doc.getLineHeightFactor() * doc.getFontSize() * 0.4; // further reduced spacing
       
         // — QR code —
         const qrCanvas = document.querySelector('#qrcode canvas');
